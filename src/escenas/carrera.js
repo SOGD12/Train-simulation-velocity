@@ -10,7 +10,7 @@ import { C, crearBala, crearConvencional, nuevaIlustracion, TAU } from './modelo
 
 const X_A = -370
 const X_B = 370
-const ESCALA = 0.4
+const ESCALA = 0.62
 const ESCALA_CELULAR = 0.62 // en celulares los trenes se dibujan más grandes y la cámara los sigue
 const LARGO_TREN_BASE = 330
 const ZOOM_MAX_CELULAR = 1.25
