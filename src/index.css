@@ -1,0 +1,880 @@
+/* Datos de trenes: la simulación es la protagonista; el texto se reduce a leyendas cortas. */
+
+:root {
+  --papel: #f4efe4;
+  --papel-hondo: #ebe4d4;
+  --carta: #fbf8f1;
+  --tinta: #14212b;
+  --tinta-suave: #4b5a64;
+  --tinta-tenue: #6d7a82;
+  --linea: rgba(20, 33, 43, 0.14);
+  --cuadricula: rgba(20, 33, 43, 0.045);
+  --martin: #0b6e99;
+  --martin-claro: #1a86c7;
+  --naranja: #e8742a;
+  --rojo: #c8332b;
+  --verde: #2f8f57;
+  --ambar: #d4911a;
+
+  --f-titulo: 'Fraunces Variable', Georgia, serif;
+  --f-texto: 'Hanken Grotesk Variable', system-ui, sans-serif;
+  --f-cifra: 'JetBrains Mono Variable', ui-monospace, monospace;
+
+  --margen: clamp(16px, 4vw, 56px);
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--papel);
+  background-image:
+    linear-gradient(var(--cuadricula) 1px, transparent 1px),
+    linear-gradient(90deg, var(--cuadricula) 1px, transparent 1px);
+  background-size: 32px 32px;
+  color: var(--tinta);
+  font-family: var(--f-texto);
+  font-size: 1rem;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+h1,
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--martin);
+  text-underline-offset: 3px;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--naranja);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.cifra {
+  font-family: var(--f-cifra);
+  font-variant-numeric: tabular-nums;
+}
+
+.azul {
+  color: var(--martin-claro);
+}
+
+.rojo {
+  color: var(--rojo);
+}
+
+/* ------------------------------------------------------------ barra de avance */
+
+.avance {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 3px;
+  z-index: 10;
+}
+
+.avance div {
+  height: 100%;
+  background: linear-gradient(90deg, var(--martin-claro), var(--naranja));
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+/* ------------------------------------------------------------ escenas */
+
+.lienzo {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.lienzo canvas {
+  display: block;
+}
+
+/* ------------------------------------------------------------ portada */
+
+.portada {
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  padding: 32px var(--margen) clamp(40px, 8vh, 80px);
+  text-align: center;
+}
+
+.portada__lienzo {
+  height: 100%;
+  min-height: 260px;
+}
+
+.portada h1 {
+  font-family: var(--f-titulo);
+  font-size: clamp(3rem, 9vw, 7rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+
+.portada h1 em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--martin);
+}
+
+.portada__pista {
+  margin-top: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--tinta-tenue);
+}
+
+.portada__pista span {
+  display: inline-block;
+  margin-left: 0.3rem;
+  animation: bajar 1.8s ease-in-out infinite;
+}
+
+@keyframes bajar {
+  50% {
+    transform: translateY(5px);
+  }
+}
+
+/* ------------------------------------------------------------ secciones con escena fija */
+
+.seccion-fija {
+  position: relative;
+  height: var(--alto, 400svh);
+}
+
+.fija {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.fija > .lienzo {
+  height: 100%;
+}
+
+/* leyenda corta sobre la escena */
+
+.leyenda {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: clamp(24px, 7vh, 64px);
+  padding: 0 var(--margen);
+  text-align: center;
+  pointer-events: none;
+}
+
+.leyenda__frases {
+  display: grid;
+  font-family: var(--f-titulo);
+  font-size: clamp(1.4rem, 3.2vw, 2.4rem);
+  font-weight: 600;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.leyenda__frases span {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
+}
+
+.leyenda__frases span.activa {
+  opacity: 1;
+  transform: none;
+}
+
+.leyenda__puntos {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.leyenda__puntos span {
+  width: 22px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--linea);
+  transition: background 0.3s ease;
+}
+
+.leyenda__puntos span.activo {
+  background: var(--naranja);
+}
+
+/* narices: nombre de cada tren */
+
+.etiqueta-tren {
+  position: absolute;
+  left: var(--margen);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.etiqueta-tren--conv {
+  top: 16%;
+  color: var(--rojo);
+}
+
+.etiqueta-tren--bala {
+  top: 52%;
+  color: var(--martin);
+}
+
+/* ------------------------------------------------------------ carrera */
+
+.fija--carrera {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: clamp(24px, 5vh, 48px) var(--margen);
+}
+
+.carrera__cabeza {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.carrera__titulo {
+  font-family: var(--f-titulo);
+  font-size: clamp(1.4rem, 3vw, 2.2rem);
+  font-weight: 600;
+}
+
+.carrera__titulo .cifra {
+  font-size: 0.7em;
+  color: var(--tinta-tenue);
+  margin-left: 0.3em;
+}
+
+.reloj {
+  font-size: clamp(2.2rem, 6vw, 4rem);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.reloj small {
+  font-size: 0.4em;
+  margin-left: 0.15em;
+  color: var(--tinta-tenue);
+}
+
+.fija--carrera .carrera__lienzo {
+  height: 100%;
+  min-height: 160px;
+}
+
+.carrera__fichas {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+.ficha {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--carta);
+  border: 1px solid var(--linea);
+}
+
+.ficha__nombre {
+  font-weight: 700;
+}
+
+.ficha--bala .ficha__nombre {
+  color: var(--martin);
+}
+
+.ficha--conv .ficha__nombre {
+  color: var(--rojo);
+}
+
+.ficha__dato {
+  font-size: 0.9rem;
+  color: var(--tinta-suave);
+}
+
+.resultado {
+  position: absolute;
+  top: 4%;
+  left: 50%;
+  translate: -50% 0;
+  padding: 16px 24px;
+  border-radius: 16px;
+  background: var(--carta);
+  border: 1px solid var(--linea);
+  box-shadow: 0 10px 30px -18px rgba(20, 33, 43, 0.5);
+  text-align: center;
+  font-size: 1.05rem;
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease;
+  pointer-events: none;
+}
+
+.resultado--visible {
+  opacity: 1;
+  transform: none;
+}
+
+.resultado__final {
+  margin-top: 6px;
+  font-family: var(--f-titulo);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--naranja);
+}
+
+/* ------------------------------------------------------------ simulador */
+
+.simulador {
+  padding: clamp(64px, 11vh, 128px) var(--margen) clamp(48px, 8vh, 96px);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.simulador__cabeza {
+  margin-bottom: 28px;
+}
+
+.simulador__cabeza h2 {
+  font-family: var(--f-titulo);
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+}
+
+.simulador__cabeza p:last-child {
+  color: var(--tinta-suave);
+  font-size: 1.05rem;
+}
+
+.antetitulo {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--martin);
+  margin-bottom: 8px;
+}
+
+/* controles */
+
+.deslizador__fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.deslizador label {
+  font-weight: 700;
+}
+
+.deslizador__valor {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--tinta-tenue);
+}
+
+.deslizador__valor input {
+  width: 5.2em;
+  padding: 6px 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: right;
+  border: 1px solid var(--linea);
+  border-radius: 8px;
+  background: var(--papel);
+  color: var(--tinta);
+}
+
+.rango {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 10px;
+  margin: 8px 0;
+  border-radius: 5px;
+  background: var(--papel-hondo);
+  cursor: pointer;
+}
+
+.rango--zonas {
+  background: linear-gradient(
+    to right,
+    var(--verde) 0 var(--a),
+    var(--ambar) var(--a) var(--b),
+    var(--rojo) var(--b) 100%
+  );
+}
+
+.rango::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--carta);
+  border: 3px solid var(--tinta);
+  box-shadow: 0 2px 6px rgba(20, 33, 43, 0.25);
+}
+
+.rango::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--carta);
+  border: 3px solid var(--tinta);
+  box-shadow: 0 2px 6px rgba(20, 33, 43, 0.25);
+}
+
+.rango:focus-visible,
+.deslizador__valor input:focus-visible,
+.chip:focus-visible {
+  outline: 2px solid var(--naranja);
+  outline-offset: 3px;
+}
+
+.marcas {
+  position: relative;
+  height: 16px;
+  font-family: var(--f-cifra);
+  font-size: 0.72rem;
+  color: var(--tinta-tenue);
+}
+
+.marcas span {
+  position: absolute;
+  top: 0;
+  translate: -50% 0;
+}
+
+/* distancia */
+
+.sim-distancia {
+  padding: 20px 22px;
+  margin-bottom: 18px;
+  border-radius: 18px;
+  background: var(--carta);
+  border: 1px solid var(--linea);
+}
+
+.sim-distancia__atajos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.chip {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--linea);
+  background: transparent;
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.chip--activo {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: var(--carta);
+}
+
+.chip--reiniciar {
+  margin-left: auto;
+}
+
+.chip:disabled {
+  color: var(--tinta-tenue);
+  cursor: default;
+}
+
+/* tarjetas de cada tren */
+
+.sim-trenes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.tren {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 22px 22px;
+  border-radius: 18px;
+  background: var(--carta);
+  /* El color de la zona (verde, ámbar, rojo) tiñe todo el borde, fino, para no chocar con las esquinas. */
+  border: 2px solid color-mix(in srgb, var(--zona) 55%, transparent);
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.zona--verde {
+  --zona: var(--verde);
+}
+
+.zona--ambar {
+  --zona: var(--ambar);
+}
+
+.zona--rojo {
+  --zona: var(--rojo);
+  background: color-mix(in srgb, var(--rojo) 6%, var(--carta));
+}
+
+.tren__cabeza {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.tren__cabeza h3 {
+  margin: 0;
+  font-family: var(--f-titulo);
+  font-size: 1.45rem;
+}
+
+.tren--bala h3 {
+  color: var(--martin);
+}
+
+.tren--conv h3 {
+  color: var(--rojo);
+}
+
+.tren__cabeza p {
+  font-size: 0.82rem;
+  color: var(--tinta-tenue);
+}
+
+.tren__curva {
+  height: 230px;
+  margin: 12px 0 14px;
+  border-radius: 12px;
+  background: var(--papel);
+  overflow: hidden;
+}
+
+.tren__fuerza,
+.tren__vista {
+  position: absolute;
+  left: 12px;
+  font-size: 0.78rem;
+  color: var(--tinta-suave);
+  pointer-events: none;
+}
+
+.tren__fuerza {
+  top: 10px;
+}
+
+.tren__fuerza strong {
+  font-size: 1rem;
+  color: var(--zona);
+}
+
+.tren__vista {
+  bottom: 8px;
+  color: var(--tinta-tenue);
+}
+
+.tren__aviso {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  pointer-events: none;
+}
+
+.tren__aviso--vuelco {
+  background: var(--rojo);
+}
+
+.tren__aviso--atc {
+  background: var(--martin);
+}
+
+.tren__dato {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--tinta-suave);
+}
+
+.tren__dato strong {
+  color: var(--tinta);
+}
+
+.tren__tiempo {
+  margin-top: 6px;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.tren__cuenta {
+  font-size: 0.88rem;
+  color: var(--tinta-suave);
+}
+
+.tren__estado {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--linea);
+  font-size: 0.92rem;
+}
+
+.tren__punto {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--zona);
+  translate: 0 1px;
+}
+
+/* comparación de tiempos */
+
+/* Misma tarjeta clara que el resto del simulador: papel, borde fino y los colores de cada tren. */
+.comparacion {
+  margin-top: 18px;
+  padding: 20px 22px;
+  border-radius: 18px;
+  background: var(--carta);
+  border: 1px solid var(--linea);
+  color: var(--tinta);
+}
+
+.comparacion__titulo {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--martin);
+  margin-bottom: 14px;
+}
+
+.barra-tiempo {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr) 7.5rem;
+  align-items: center;
+  gap: 6px 14px;
+  margin-bottom: 10px;
+}
+
+.barra-tiempo__nombre {
+  font-family: var(--f-titulo);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.barra-tiempo--bala .barra-tiempo__nombre {
+  color: var(--martin);
+}
+
+.barra-tiempo--conv .barra-tiempo__nombre {
+  color: var(--rojo);
+}
+
+.barra-tiempo__pista {
+  height: 14px;
+  border-radius: 7px;
+  background: var(--papel-hondo);
+  overflow: hidden;
+}
+
+.barra-tiempo__pista span {
+  display: block;
+  height: 100%;
+  border-radius: 7px;
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.barra-tiempo--bala .barra-tiempo__pista span {
+  background: var(--martin-claro);
+}
+
+.barra-tiempo--conv .barra-tiempo__pista span {
+  background: var(--rojo);
+}
+
+.barra-tiempo__valor {
+  text-align: right;
+  font-weight: 600;
+}
+
+.barra-tiempo__alerta {
+  grid-column: 2 / -1;
+  justify-self: start;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--rojo);
+  color: #fff;
+}
+
+.comparacion__veredicto {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--linea);
+  font-family: var(--f-titulo);
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.simulador__nota {
+  margin-top: 14px;
+  font-size: 0.8rem;
+  color: var(--tinta-tenue);
+  max-width: 60rem;
+}
+
+/* ------------------------------------------------------------ pie */
+
+.pie {
+  padding: 28px var(--margen) 36px;
+  border-top: 1px solid var(--linea);
+  font-size: 0.8rem;
+  color: var(--tinta-tenue);
+}
+
+.pie__titulo {
+  margin-bottom: 6px;
+}
+
+.pie__fuentes a {
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------ celulares */
+
+@media (max-width: 860px) {
+  .sim-trenes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .barra-tiempo {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .barra-tiempo__pista {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .barra-tiempo__alerta {
+    grid-column: 1 / -1;
+  }
+
+  .chip--reiniciar {
+    margin-left: 0;
+  }
+
+  .etiqueta-tren {
+    font-size: 0.72rem;
+  }
+
+  .etiqueta-tren--conv {
+    top: 28%;
+  }
+
+  .etiqueta-tren--bala {
+    top: 50%;
+  }
+
+  .ficha {
+    padding: 8px 14px;
+    gap: 10px;
+  }
+
+  .carrera__cabeza {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+
+  .carrera__cabeza .reloj {
+    margin-left: auto;
+  }
+
+  .resultado {
+    font-size: 0.9rem;
+    padding: 12px 16px;
+    white-space: nowrap;
+  }
+
+  .resultado__final {
+    font-size: 1.3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leyenda__frases span,
+  .resultado,
+  .tren,
+  .barra-tiempo__pista span {
+    transition: none;
+  }
+
+  .portada__pista span {
+    animation: none;
+  }
+}
