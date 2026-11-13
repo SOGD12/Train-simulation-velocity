@@ -1,5 +1,5 @@
 import Zdog from 'zdog'
-import { lerp } from '../lib/anim.js'
+import { lerp, limitar } from '../lib/anim.js'
 import { distanciaRecorrida, resolver } from '../lib/calculos.js'
 import { minutosDeProgreso } from '../lib/carrera.js'
 import { C, crearBala, crearConvencional, nuevaIlustracion, TAU } from './modelos.js'
@@ -11,7 +11,9 @@ import { C, crearBala, crearConvencional, nuevaIlustracion, TAU } from './modelo
 const X_A = -370
 const X_B = 370
 const ESCALA = 0.4
-const LARGO_TREN = 330 * ESCALA
+const ESCALA_CELULAR = 0.62 // en celulares los trenes se dibujan más grandes y la cámara los sigue
+const LARGO_TREN_BASE = 330
+const ZOOM_MAX_CELULAR = 1.25
 const VIAS = { bala: 58, conv: -58 }
 const SUELO = 10
 
@@ -84,7 +86,12 @@ function bandera(addTo, z, color) {
 }
 
 export function crearCarrera(canvas, { datosRef }) {
-  const vista = nuevaIlustracion(canvas, { ancho: 840, alto: 270, rotate: { x: -TAU / 11, y: 0 } })
+  const vista = nuevaIlustracion(canvas, {
+    ancho: 840,
+    alto: 270,
+    movil: { ancho: 420, alto: 270 },
+    rotate: { x: -TAU / 11, y: 0 },
+  })
   const { illo } = vista
 
   // Zdog dibuja cada figura según su profundidad media. Un solo suelo grande taparía la vía de atrás,
@@ -114,22 +121,44 @@ export function crearCarrera(canvas, { datosRef }) {
 
   const bala = crearBala(illo)
   const conv = crearConvencional(illo)
-  for (const tren of [bala.raiz, conv.raiz]) tren.scale.set({ x: ESCALA, y: ESCALA, z: ESCALA })
-
+  let escala = 0
   const ubicar = (raiz, km, d, z, alto) => {
-    raiz.translate.set({ x: lerp(X_A + LARGO_TREN + 4, X_B, km / d), y: SUELO - alto, z })
+    raiz.translate.set({ x: lerp(X_A + LARGO_TREN_BASE * escala + 4, X_B, km / d), y: SUELO - alto, z })
+    return raiz.translate.x
   }
 
   return {
     ajustar: vista.ajustar,
     dibujar(p) {
       const { distanciaKm, vBala, vConv } = datosRef.current
+      // Escala de los trenes según el ancho de pantalla.
+      const nueva = vista.estrecho ? ESCALA_CELULAR : ESCALA
+      if (nueva !== escala) {
+        escala = nueva
+        for (const tren of [bala.raiz, conv.raiz]) tren.scale.set({ x: escala, y: escala, z: escala })
+      }
       const r = resolver(distanciaKm, vBala, vConv)
       const minutos = minutosDeProgreso(p, r.minTotal)
       const kmBala = distanciaRecorrida(r.vb, minutos, r.d)
       const kmConv = distanciaRecorrida(r.vc, minutos, r.d)
-      ubicar(bala.raiz, kmBala, r.d, VIAS.bala, 32 * ESCALA + 5)
-      ubicar(conv.raiz, kmConv, r.d, VIAS.conv, 36 * ESCALA + 6)
+      const xBala = ubicar(bala.raiz, kmBala, r.d, VIAS.bala, 32 * escala + 5)
+      const xConv = ubicar(conv.raiz, kmConv, r.d, VIAS.conv, 36 * escala + 6)
+
+      if (vista.estrecho) {
+        // Cámara de celular: se centra en los dos trenes y se aleja solo lo justo para que quepan.
+        const largo = LARGO_TREN_BASE * escala
+        const izq = Math.min(xBala, xConv) - largo - 30
+        const der = Math.max(xBala, xConv) + 40
+        const zoomMin = vista.w / (X_B - X_A + 120)
+        const zoom = limitar(vista.w / (der - izq), zoomMin, ZOOM_MAX_CELULAR)
+        const mitad = vista.w / zoom / 2
+        const centro = limitar((izq + der) / 2, X_A - 50 + mitad, X_B + 50 - mitad)
+        illo.zoom = zoom
+        illo.translate.x = -centro
+      } else {
+        illo.zoom = vista.zoomBase
+        illo.translate.x = 0
+      }
       banderas[0].tela.color = kmBala >= r.d ? banderas[0].color : '#b9b2a3'
       banderas[1].tela.color = kmConv >= r.d ? banderas[1].color : '#b9b2a3'
       illo.updateRenderGraph()

@@ -30,7 +30,7 @@ const alturaLinea = (o, r) => Math.sqrt(o * o + r * r)
 
 export function crearNarices(canvas, { reducido }) {
   // Escena a pantalla completa: se deja aire abajo para la leyenda.
-  const vista = nuevaIlustracion(canvas, { ancho: 820, alto: 520, rotate: { x: -TAU / 30, y: -TAU / 22 } })
+  const vista = nuevaIlustracion(canvas, { ancho: 820, alto: 520, movil: { ancho: 560, alto: 440 }, rotate: { x: -TAU / 30, y: -TAU / 22 } })
   const { illo } = vista
   illo.translate.y = -36
 

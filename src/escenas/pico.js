@@ -5,7 +5,7 @@ import { crearMartin, nuevaIlustracion, TAU } from './modelos.js'
 // (anillos) y se gira para ver que cada corte es un círculo.
 export function crearPico(canvas) {
   // Escena a pantalla completa: se deja aire abajo para la leyenda.
-  const vista = nuevaIlustracion(canvas, { ancho: 380, alto: 330, rotate: { x: -TAU / 40, y: -TAU / 14 } })
+  const vista = nuevaIlustracion(canvas, { ancho: 380, alto: 330, movil: { ancho: 300, alto: 330 }, rotate: { x: -TAU / 40, y: -TAU / 14 } })
   vista.illo.translate.y = -24
   const { illo } = vista
   const { raiz, anillos } = crearMartin(illo, { conAnillos: true })

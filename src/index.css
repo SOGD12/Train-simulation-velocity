@@ -866,6 +866,17 @@ a:focus-visible {
   }
 }
 
+/* celulares (coincide con ANCHO_CELULAR en escenas/modelos.js): las escenas se dibujan más grandes */
+@media (max-width: 599px) {
+  .etiqueta-tren--conv {
+    top: calc(50% - 222px);
+  }
+
+  .etiqueta-tren--bala {
+    top: calc(50% - 8px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .leyenda__frases span,
   .resultado,

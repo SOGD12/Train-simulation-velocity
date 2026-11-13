@@ -31,19 +31,28 @@ export const C = {
 
 // Ilustración que se adapta al tamaño de su contenedor. `ancho` y `alto` son las unidades
 // de la escena que siempre deben caber en pantalla.
-export function nuevaIlustracion(canvas, { ancho, alto, ...opciones }) {
+// `movil` ({ ancho, alto }, opcional) es el tamaño lógico que debe caber en pantallas estrechas (celulares):
+// más chico que el de escritorio, para que la escena se vea más grande y no "lejos".
+export const ANCHO_CELULAR = 600
+
+export function nuevaIlustracion(canvas, { ancho, alto, movil, ...opciones }) {
   const illo = new Zdog.Illustration({ element: canvas, resize: false, ...opciones })
   const vista = {
     illo,
     zoomBase: 1,
     estrecho: false,
+    w: 0,
+    h: 0,
     ajustar() {
       const caja = canvas.parentElement.getBoundingClientRect()
       const w = Math.max(1, Math.round(caja.width))
       const h = Math.max(1, Math.round(caja.height))
       illo.setSize(w, h)
-      vista.estrecho = w < 600
-      vista.zoomBase = Math.min(w / ancho, h / alto)
+      vista.w = w
+      vista.h = h
+      vista.estrecho = w < ANCHO_CELULAR
+      const base = vista.estrecho && movil ? movil : { ancho, alto }
+      vista.zoomBase = Math.min(w / base.ancho, h / base.alto)
       illo.zoom = vista.zoomBase
     },
   }

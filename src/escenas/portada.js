@@ -12,7 +12,7 @@ const BALANCEO = (86 / 360) * TAU
 const VELOCIDAD = 0.42 // una vuelta completa de ida y vuelta ≈ 15 s
 
 export function crearPortada(canvas) {
-  const vista = nuevaIlustracion(canvas, { ancho: 280, alto: 230, rotate: { x: -TAU / 28, y: DE_FRENTE } })
+  const vista = nuevaIlustracion(canvas, { ancho: 280, alto: 230, movil: { ancho: 220, alto: 200 }, rotate: { x: -TAU / 28, y: DE_FRENTE } })
   const { illo } = vista
   const { raiz } = crearMartin(illo)
   // Centro aproximado del pájaro con su rama, para que gire sobre sí mismo y no se desplace.
