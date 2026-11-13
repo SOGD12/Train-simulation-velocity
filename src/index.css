@@ -333,8 +333,12 @@ a:focus-visible {
 .resultado {
   position: absolute;
   top: 4%;
-  left: 50%;
-  translate: -50% 0;
+  /* Centrado sin `translate`: el minificador del build lo descartaba en esta regla y el cuadro se salía de la pantalla. */
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: max-content;
+  max-width: calc(100% - 24px);
   padding: 16px 24px;
   border-radius: 16px;
   background: var(--carta);
@@ -858,9 +862,6 @@ a:focus-visible {
   .resultado {
     font-size: 0.9rem;
     padding: 12px 16px;
-    /* Con left: 50% el ancho automático se queda en la mitad del contenedor: se fija al contenido. */
-    width: max-content;
-    max-width: calc(100% - 24px);
   }
 
   .resultado__final {

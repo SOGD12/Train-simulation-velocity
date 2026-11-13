@@ -10,11 +10,11 @@ import { C, crearBala, crearConvencional, nuevaIlustracion, TAU } from './modelo
 
 const X_A = -370
 const X_B = 370
-const ESCALA = 0.62
+const ESCALA = 0.8
 const ESCALA_CELULAR = 0.62 // en celulares los trenes se dibujan más grandes y la cámara los sigue
 const LARGO_TREN_BASE = 330
 const ZOOM_MAX_CELULAR = 1.25
-const VIAS = { bala: 58, conv: -58 }
+const VIAS = { bala: 100, conv: -100 }
 const SUELO = 10
 
 // Letras A y B dibujadas con líneas, sobre un cartel.
@@ -88,18 +88,19 @@ function bandera(addTo, z, color) {
 export function crearCarrera(canvas, { datosRef }) {
   const vista = nuevaIlustracion(canvas, {
     ancho: 840,
-    alto: 270,
-    movil: { ancho: 420, alto: 270 },
+    alto: 340,
+    movil: { ancho: 420, alto: 340 },
     rotate: { x: -TAU / 11, y: 0 },
   })
   const { illo } = vista
+  illo.translate.y = 26 // deja aire arriba para el cuadro del resultado
 
   // Zdog dibuja cada figura según su profundidad media. Un solo suelo grande taparía la vía de atrás,
   // así que el suelo va en franjas que nunca quedan debajo de una vía.
   const franjas = [
-    [-118, VIAS.conv - 19],
+    [VIAS.conv - 60, VIAS.conv - 19],
     [VIAS.conv + 19, VIAS.bala - 19],
-    [VIAS.bala + 19, 118],
+    [VIAS.bala + 19, VIAS.bala + 60],
   ]
   for (const [z0, z1] of franjas) {
     new Zdog.Rect({
