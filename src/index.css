@@ -858,7 +858,9 @@ a:focus-visible {
   .resultado {
     font-size: 0.9rem;
     padding: 12px 16px;
-    white-space: nowrap;
+    /* Con left: 50% el ancho automático se queda en la mitad del contenedor: se fija al contenido. */
+    width: max-content;
+    max-width: calc(100% - 24px);
   }
 
   .resultado__final {
@@ -874,6 +876,19 @@ a:focus-visible {
 
   .etiqueta-tren--bala {
     top: calc(50% - 8px);
+  }
+
+  /* fichas de la carrera: cada dato en una sola línea, y la ficha baja de renglón si no cabe */
+  .ficha {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px 10px;
+    border-radius: 22px;
+  }
+
+  .ficha__nombre,
+  .ficha__dato {
+    white-space: nowrap;
   }
 }
 
