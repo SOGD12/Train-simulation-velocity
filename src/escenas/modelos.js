@@ -1,8 +1,10 @@
 import Zdog from 'zdog'
+import paraboloide from '../data/paraboloide.json'
+import { mezclar } from '../lib/anim.js'
 
 // Modelos 3D hechos con figuras geométricas simples de Zdog:
-//  - martín pescador: esferas (trazos gruesos) y un cono para el pico
-//  - tren bala: cilindro + cono (la nariz)
+//  - martín pescador: esferas (trazos gruesos) y un paraboloide de revolución para el pico
+//  - tren bala: cilindro + paraboloide de revolución (la nariz)
 //  - tren convencional: una caja (prisma rectangular)
 // Todos miran hacia +x (a la derecha).
 
@@ -14,6 +16,7 @@ export const C = {
   naranja: '#e8742a',
   blanco: '#fbfaf6',
   pico: '#1d2227',
+  picoLuz: '#2d353c',
   ojo: '#0e1114',
   pata: '#d8452b',
   rama: '#7a5634',
@@ -65,6 +68,41 @@ export function mostrar(nodo, visible) {
   for (const hijo of nodo.children) mostrar(hijo, visible)
 }
 
+// ---------------------------------------------------------------- paraboloide de revolución
+
+// Radio de un paraboloide de revolución a la distancia `z` de su base (la punta está en z = largo):
+// r = R·√(1 − z/L). La malla sale de tools/paraboloide.py (z = 1 − r², en unidades de la base).
+export const radioParaboloide = (z, largo, diametro) => (diametro / 2) * Math.sqrt(Math.max(0, 1 - z / largo))
+
+// Paraboloide con la base (radio = diametro/2) en z = 0 y la punta en z = largo.
+// Devuelve el grupo y `colorear(luz, sombra)`: cada cara se mezcla entre ambos colores según su luz.
+function crearParaboloide(addTo, { diametro, largo, luz, sombra }) {
+  const radio = diametro / 2
+  const grupo = new Zdog.Group({ addTo, updateSort: true })
+  const puntos = paraboloide.vertices.map(([x, y, z]) => ({ x: x * radio, y: y * radio, z: z * largo }))
+  const caras = paraboloide.caras.map((cara, i) => ({
+    forma: new Zdog.Shape({
+      addTo: grupo,
+      path: cara.map((k) => puntos[k]),
+      closed: true,
+      fill: true,
+      stroke: 1,
+      color: luz,
+    }),
+    brillo: paraboloide.luz[i],
+  }))
+
+  let anterior = ''
+  function colorear(claro, oscuro) {
+    const clave = claro + oscuro
+    if (clave === anterior) return
+    anterior = clave
+    for (const { forma, brillo } of caras) forma.color = mezclar(oscuro, claro, brillo)
+  }
+  colorear(luz, sombra)
+  return { grupo, colorear }
+}
+
 // ---------------------------------------------------------------- martín pescador
 
 export const PICO = { largo: 72, diametro: 15 }
@@ -107,24 +145,17 @@ export function crearMartin(addTo, { conAnillos = false, conRama = true } = {}) 
     new Zdog.Shape({ addTo: raiz, translate: { x: 34, y: -38, z: 19 * lado }, stroke: 7, color: C.ojo })
   }
 
-  // Pico: un cono. Su eje local z apunta hacia +x en el mundo.
+  // Pico: un paraboloide de revolución. Su eje local z apunta hacia +x en el mundo.
   const pico = new Zdog.Anchor({ addTo: raiz, translate: { x: 40, y: -30 }, rotate: { y: -TAU / 4 } })
-  new Zdog.Cone({
-    addTo: pico,
-    diameter: PICO.diametro,
-    length: PICO.largo,
-    stroke: 1,
-    color: C.pico,
-    backface: C.pico,
-  })
+  crearParaboloide(pico, { diametro: PICO.diametro, largo: PICO.largo, luz: C.picoLuz, sombra: C.pico })
 
-  // Anillos: cortes del pico. Cada corte de un cono es un círculo, más chico hacia la punta.
+  // Anillos: cortes del pico. Cada corte de un paraboloide es un círculo, más chico hacia la punta.
   const anillos = []
   if (conAnillos) {
     const cortes = 5
     for (let i = 0; i < cortes; i++) {
       const z = (PICO.largo * i) / cortes
-      const radio = (PICO.diametro / 2) * (1 - z / PICO.largo)
+      const radio = radioParaboloide(z, PICO.largo, PICO.diametro)
       anillos.push(
         new Zdog.Ellipse({
           addTo: pico,
@@ -158,20 +189,19 @@ export function crearBala(addTo) {
   const raiz = new Zdog.Anchor({ addTo })
   const r = BALA.diametro / 2
 
-  // Nariz: un cono. Se escala para la transformación pico → nariz.
+  // Nariz: un paraboloide de revolución. Se escala para la transformación pico → nariz.
   const nariz = new Zdog.Anchor({ addTo: raiz, translate: { x: -BALA.nariz }, rotate: { y: -TAU / 4 } })
-  const cono = new Zdog.Cone({
-    addTo: nariz,
-    diameter: BALA.diametro,
-    length: BALA.nariz,
-    stroke: 1,
-    color: C.balaCuerpo,
-    backface: C.balaSombra,
+  const { colorear: colorearNariz } = crearParaboloide(nariz, {
+    diametro: BALA.diametro,
+    largo: BALA.nariz,
+    luz: C.balaCuerpo,
+    sombra: C.balaSombra,
   })
-  // Parabrisas sobre la nariz.
+  // Parabrisas sobre la nariz: sigue el lomo del paraboloide.
+  const lomo = (z) => -radioParaboloide(z, BALA.nariz, BALA.diametro) + 2
   new Zdog.Shape({
     addTo: nariz,
-    path: [{ x: 0, y: -16, z: 66 }, { x: 0, y: -11, z: 84 }],
+    path: [{ x: 0, y: lomo(66), z: 66 }, { x: 0, y: lomo(84), z: 84 }],
     stroke: 9,
     color: C.ventana,
   })
@@ -212,7 +242,7 @@ export function crearBala(addTo) {
     }
   }
 
-  return { raiz, nariz, cono, cuerpo, ruedas }
+  return { raiz, nariz, colorearNariz, cuerpo, ruedas }
 }
 
 // ---------------------------------------------------------------- tren convencional

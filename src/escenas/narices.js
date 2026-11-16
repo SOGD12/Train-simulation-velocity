@@ -3,7 +3,7 @@ import { lerp, limitar, mezclar, suave, tramo } from '../lib/anim.js'
 import { BALA, C, CONV, crearBala, crearConvencional, mostrar, nuevaIlustracion, PICO, TAU } from './modelos.js'
 
 // Escena "Dos narices":
-//  1. el pico (un cono oscuro) se transforma en la nariz blanca del tren bala;
+//  1. el pico (un paraboloide oscuro) se transforma en la nariz blanca del tren bala;
 //  2. crece el cuerpo del tren bala y llega el tren convencional (una caja);
 //  3. aparece el aire: líneas que rodean cada frente y partículas que se vuelven
 //     naranjas donde el aire tiene que desviarse de golpe (más presión, más resistencia).
@@ -23,8 +23,8 @@ const PRESION = '#e8542a'
 // Cuánto se tiene que apartar el aire a la distancia `x` de la punta (x > 0 = delante del tren).
 // Caja: el aire choca con un frente plano y se aparta casi de golpe, en muy poco espacio.
 const desvioCaja = (x) => (R_CONV + MARGEN) * suave(limitar((26 - x) / 26))
-// Cono: el aire se aparta poco a poco, siguiendo la nariz (el radio crece en línea recta).
-const desvioCono = (x) => (x >= 6 ? 0 : (R_BALA + MARGEN) * limitar((6 - x) / (BALA.nariz + 6)))
+// Paraboloide: el aire se aparta siguiendo la nariz, cuyo radio crece como la raíz de la distancia a la punta.
+const desvioParaboloide = (x) => (x >= 6 ? 0 : (R_BALA + MARGEN) * Math.sqrt(limitar((6 - x) / (BALA.nariz + 6))))
 
 const alturaLinea = (o, r) => Math.sqrt(o * o + r * r)
 
@@ -61,7 +61,7 @@ export function crearNarices(canvas, { reducido }) {
   const corrientes = []
   for (const [carril, desvio] of [
     [CARRIL.conv, desvioCaja],
-    [CARRIL.bala, desvioCono],
+    [CARRIL.bala, desvioParaboloide],
   ]) {
     for (const lado of [-1, 1]) {
       for (const o of DESVIOS) {
@@ -104,8 +104,7 @@ export function crearNarices(canvas, { reducido }) {
       const largo = lerp(PICO.largo / BALA.nariz, 1, morf)
       bala.nariz.scale.set({ x: diam, y: diam, z: largo })
       bala.nariz.translate.x = -BALA.nariz * largo
-      bala.cono.color = mezclar(C.pico, C.balaCuerpo, morf)
-      bala.cono.backface = mezclar(C.pico, C.balaSombra, morf)
+      bala.colorearNariz(mezclar(C.picoLuz, C.balaCuerpo, morf), mezclar(C.pico, C.balaSombra, morf))
 
       bala.cuerpo.translate.x = -BALA.nariz * largo
       bala.cuerpo.scale.z = Math.max(crecer, 0.001)

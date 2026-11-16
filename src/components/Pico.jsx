@@ -3,7 +3,7 @@ import { useProgreso } from '../lib/hooks.js'
 import Lienzo from './Lienzo.jsx'
 import Pasos from './Pasos.jsx'
 
-const FRASES = ['El martín pescador', 'Su pico es un cono', 'Entra al agua sin salpicar', 'Y así inspiró al tren bala']
+const FRASES = ['El martín pescador', 'Su pico es un paraboloide', 'Entra al agua sin salpicar', 'Y así inspiró al tren bala']
 
 export default function Pico() {
   const { ref, progreso, progresoRef } = useProgreso()
